@@ -112,10 +112,28 @@ class BenchPressCounter:
         if self.stage == "up" and (time.time() - self.last_count_time) < 0.1:
             self.path_history = []
 
+        # HUD
 
-        # UI
-        cv2.putText(image, f"Reps: {self.count}", (50, 100), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 4)
-        cv2.putText(image, f"Stage: {self.stage}", (50, 180), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 0), 2)
-        cv2.putText(image, f"Angle: {int(angle)}", (50, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 200), 2)
+        h, w, _ = image.shape
+
+        overlay = image.copy()
+        cv2.rectangle(overlay, (20, 20), (320, 180), (30, 30, 30), -1) 
+        cv2.addWeighted(overlay, 0.6, image, 0.4, 0, image)
+        cv2.line(image, (20, 20), (320, 20), (0, 255, 255), 3) 
+
+        # Rep Count
+        cv2.putText(image, "REPS", (40, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 2)
+        cv2.putText(image, f"{self.count}", (40, 130), cv2.FONT_HERSHEY_DUPLEX, 2.5, (255, 255, 255), 5)
+
+        # Stage Indicator
+        stage_color = (0, 255, 0) if self.stage == "down" else (255, 255, 0)
+        cv2.putText(image, "STAGE", (180, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 2)
+        cv2.putText(image, self.stage.upper(), (180, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, stage_color, 2)
+
+        # Angle mapping
+        bar_val = np.interp(angle, (90, 165), (400, 100)) 
+        cv2.rectangle(image, (w - 80, 100), (w - 50, 400), (50, 50, 50), 3) 
+        cv2.rectangle(image, (w - 80, int(bar_val)), (w - 50, 400), (0, 255, 0), -1) 
+        cv2.putText(image, "DEPTH", (w - 110, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         
         return image, self.count
