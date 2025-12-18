@@ -14,6 +14,9 @@ class BenchPressCounter:
         self.smoothing_factor = 0.2             # Modify for noise smoothing factor
         self.last_count_time = 0
         self.cooldown_period = 5.0              # Preventing accidental reps counted between lockouts
+        self.path_history = []      
+        self.max_path_points = 50               # Tail length
+
 
     def get_elbow_angle(self, landmarks):
         """Forces angle calculation by picking the best available arm."""
@@ -89,6 +92,26 @@ class BenchPressCounter:
 
                 cv2.putText(image, "LOCKOUT!", (image.shape[1]//2 - 100, 250),
                             cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 5)
+                
+        if landmarks is not None:
+            h, w, _ = image.shape
+            wrist_x = int(landmarks[10][0] * w)
+            wrist_y = int(landmarks[10][1] * h)
+            current_pos = (wrist_x, wrist_y)
+
+        if landmarks[10][2] > 0.5:
+            self.path_history.append(current_pos)
+
+        if len(self.path_history) > self.max_path_points:
+            self.path_history.pop(0)
+
+        for i in range(1, len(self.path_history)):
+            thickness = int(np.linspace(1, 5, self.max_path_points)[i])
+            cv2.line(image, self.path_history[i - 1], self.path_history[i], (0, 255, 0), thickness)
+
+        if self.stage == "up" and (time.time() - self.last_count_time) < 0.1:
+            self.path_history = []
+
 
         # UI
         cv2.putText(image, f"Reps: {self.count}", (50, 100), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 4)
