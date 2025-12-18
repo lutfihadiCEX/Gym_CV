@@ -19,6 +19,11 @@ def main():
 
     print("Press 'q' to quit | Working on:", "Webcam" if args.video == 0 else args.video)
 
+    frame_count = 0
+    skip_factor = 2
+    last_keypoints = None
+    last_count = 0
+
     while cap.isOpened():
         success, img = cap.read()
         if not success:
@@ -26,16 +31,18 @@ def main():
             break
 
         img = cv2.flip(img, 1) if args.video == "0" else img
+        frame_count += 1
+
+        if frame_count % skip_factor == 0 or last_keypoints is None:
+            last_keypoints = detector.process(img)
         
-        
-        keypoints = detector.process(img) 
         img = detector.draw(img) 
 
         
-        img, count = counter.update(keypoints, img)
+        img, last_count = counter.update(last_keypoints, img)
         
 
-        if counter.stage == "up" and count > 0 and count == counter.count: 
+        if counter.stage == "up" and last_count > 0 and last_count == counter.count: 
             beep()
 
         fps_counter.update(img)
